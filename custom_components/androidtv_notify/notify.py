@@ -27,16 +27,16 @@ from homeassistant.components.notify import BaseNotificationService, PLATFORM_SC
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-CONF_ENTITY_ID    = "entity_id"
-CONF_DURATION     = "duration"
-CONF_FONTSIZE     = "fontsize"
+CONF_ENTITY_ID = "entity_id"
+CONF_DURATION  = "duration"
+CONF_FONTSIZE  = "fontsize"
 
-FONTSIZES  = ["small", "medium", "large"]
+FONTSIZES = ["small", "medium", "large"]
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_ENTITY_ID):                         cv.string,
-    vol.Optional(CONF_DURATION,  default=1):              vol.In([0, 1]),
-    vol.Optional(CONF_FONTSIZE,  default="medium"):       vol.In(FONTSIZES),
+    vol.Required(CONF_ENTITY_ID):                  cv.string,
+    vol.Optional(CONF_DURATION, default=1):        vol.In([0, 1]),
+    vol.Optional(CONF_FONTSIZE, default="medium"): vol.In(FONTSIZES),
 })
 
 
@@ -54,22 +54,32 @@ class AndroidTVNotifyService(BaseNotificationService):
         self.default_duration = config[CONF_DURATION]
         self.default_fontsize = config[CONF_FONTSIZE]
 
+    @property
+    def extra_data_call_parameters(self):
+        """Define the schema for the data field to avoid HA validation errors."""
+        return {
+            vol.Optional(CONF_DURATION): vol.Any(None, vol.In([0, 1])),
+            vol.Optional(CONF_FONTSIZE): vol.Any(None, vol.In(FONTSIZES)),
+        }
+
     def send_message(self, message="", **kwargs):
         """Send a toast notification to the Android TV."""
-        data     = kwargs.get("data") or {}
-        title    = kwargs.get("title", "")
+        # Guard against None or non-dict values (e.g. "platform specific" placeholder)
+        raw_data = kwargs.get("data")
+        data     = raw_data if isinstance(raw_data, dict) else {}
+        title    = kwargs.get("title") or ""
         duration = data.get("duration", self.default_duration)
         fontsize = data.get("fontsize", self.default_fontsize)
 
-        # Validate per-call overrides
+        # Fallback to defaults if invalid
         if duration not in (0, 1):
             duration = self.default_duration
         if fontsize not in FONTSIZES:
             fontsize = self.default_fontsize
 
         # Escape single quotes in user-supplied strings
-        message  = str(message).replace("'", "\\'")
-        title    = str(title).replace("'", "\\'")
+        message = str(message).replace("'", "\\'")
+        title   = str(title).replace("'", "\\'")
 
         extras = f"--es message '{message}' --ei duration {duration} --es fontsize '{fontsize}'"
         if title:
