@@ -23,7 +23,7 @@ Copy the `custom_components/androidtv_notify/` folder to your HA config director
     notify.py
 ```
 
-### Using HA Terminal add-on
+Using HA Terminal add-on:
 
 ```bash
 mkdir -p /config/custom_components/androidtv_notify
@@ -31,13 +31,11 @@ mkdir -p /config/custom_components/androidtv_notify
 
 Then use File Editor to create the three files (contents in the source folder).
 
-### Using FTP / SSH / Samba
-
-Copy the folder directly to `/config/custom_components/`.
-
 ---
 
 ## Step 2: Add to configuration.yaml
+
+Minimal setup:
 
 ```yaml
 notify:
@@ -46,9 +44,27 @@ notify:
     entity_id: media_player.android_tv_192_168_1_129
 ```
 
-Replace `media_player.android_tv_192_168_1_129` with your actual TV entity ID.
+Full setup with all default options:
 
-> **Tip:** Find your entity ID under Settings → Integrations → Android Debug Bridge → your device.
+```yaml
+notify:
+  - platform: androidtv_notify
+    name: philips_tv
+    entity_id: media_player.android_tv_192_168_1_129
+    duration: 1        # 0=short (~2s), 1=long (~3.5s). Default: 1
+    fontsize: medium   # small | medium | large. Default: medium
+```
+
+---
+
+## Configuration Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `entity_id` | ✅ | — | HA entity ID of the Android TV media player |
+| `name` | ✅ | — | Name of the notify service (`notify.NAME`) |
+| `duration` | ❌ | `1` | Toast display duration: `0` = short (~2s), `1` = long (~3.5s) |
+| `fontsize` | ❌ | `medium` | Text size: `small`, `medium`, `large` |
 
 ---
 
@@ -56,13 +72,13 @@ Replace `media_player.android_tv_192_168_1_129` with your actual TV entity ID.
 
 Settings → System → Restart
 
-After restart, verify the service exists:
-
-**Developer Tools → Actions** — search for `notify.philips_tv`
+After restart, verify the service exists under **Developer Tools → Actions** — search for `notify.philips_tv`.
 
 ---
 
 ## Step 4: Test
+
+Basic test:
 
 ```yaml
 action: notify.philips_tv
@@ -70,21 +86,45 @@ data:
   message: "Hello from Home Assistant!"
 ```
 
-Click **Perform action** — a toast should appear on the TV.
+With all options:
+
+```yaml
+action: notify.philips_tv
+data:
+  title: "Front Door"
+  message: "Motion detected!"
+  data:
+    duration: 0
+    fontsize: large
+```
 
 ---
 
-## Step 5: Create an Automation
+## Per-Message Override
 
-Example — notify when front door opens (TV must be on):
+All options from the configuration can be overridden per notification via the `data` field:
+
+```yaml
+action: notify.philips_tv
+data:
+  title: "Security Alert"
+  message: "Motion detected at front door!"
+  data:
+    duration: 1       # 0=short, 1=long
+    fontsize: large   # small | medium | large
+```
+
+---
+
+## Automation Examples
+
+### Door open notification (TV must be on)
 
 ```yaml
 alias: Front Door TV Notification
-description: ""
 triggers:
   - trigger: state
-    entity_id:
-      - binary_sensor.front_door
+    entity_id: binary_sensor.front_door
     to: "on"
 conditions:
   - condition: state
@@ -93,17 +133,42 @@ conditions:
 actions:
   - action: notify.philips_tv
     data:
+      title: "Door"
       message: "Front door opened!"
+      data:
+        fontsize: large
+        duration: 1
 mode: single
 ```
 
-The condition `state: "on"` ensures the notification is only sent when the TV is actually on, avoiding ADB errors when the TV is off.
+### Motion alert with large text
+
+```yaml
+actions:
+  - action: notify.philips_tv
+    data:
+      title: "Camera"
+      message: "Motion in backyard!"
+      data:
+        fontsize: large
+        duration: 1
+```
+
+### Quick info, small text
+
+```yaml
+actions:
+  - action: notify.philips_tv
+    data:
+      message: "Washing machine done."
+      data:
+        fontsize: small
+        duration: 0
+```
 
 ---
 
 ## Multiple TVs
-
-You can add multiple TVs by repeating the `notify` block with different names:
 
 ```yaml
 notify:
@@ -114,21 +179,9 @@ notify:
   - platform: androidtv_notify
     name: bedroom_tv
     entity_id: media_player.android_tv_192_168_1_200
+    fontsize: large
+    duration: 1
 ```
-
-Each gets its own notify service: `notify.living_room_tv`, `notify.bedroom_tv`.
-
----
-
-## How It Works
-
-The custom component is a thin wrapper. When `notify.philips_tv` is called, it runs this ADB shell command via the `androidtv.adb_command` action:
-
-```
-am start -n com.hanotify/.MainActivity && am startservice -n com.hanotify/.ToastService --es message 'YOUR MESSAGE'
-```
-
-This ensures the app is in the foreground before the service is started, preventing Android's background service restrictions from blocking the toast.
 
 ---
 
@@ -138,8 +191,8 @@ This ensures the app is in the foreground before the service is started, prevent
 |---------|----------|
 | `notify.philips_tv` not found | Check `configuration.yaml` syntax, restart HA |
 | Service found but no toast | Make sure APK is installed and `MainActivity` was launched once |
-| Works once then stops | TV killed the app. Add a `am start` before `am startservice` — already handled by the component |
-| Error in HA logs | Check Settings → System → Logs, filter by `androidtv_notify` |
+| Toast shows but ignores fontsize | Some TV firmwares restrict Toast view access — falls back to default size |
+| Single quotes in message break command | Already handled — single quotes are escaped automatically |
 
 ---
 

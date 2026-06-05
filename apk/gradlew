@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# HANotify APK - Gradle build script for Linux/macOS
+# Requires: Java 11+, Android SDK
+#
+# First run setup:
+#   echo "sdk.dir=$HOME/Android/Sdk" > local.properties
+#   chmod +x gradlew && ./gradlew assembleDebug
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Try GRADLE_HOME env variable first
+if [ -n "$GRADLE_HOME" ]; then
+    exec "$GRADLE_HOME/bin/gradle" "$@"
+fi
+
+# Try gradle-dist folder next to this script (manual download)
+if [ -f "$SCRIPT_DIR/gradle-dist/gradle-8.2/bin/gradle" ]; then
+    exec "$SCRIPT_DIR/gradle-dist/gradle-8.2/bin/gradle" "$@"
+fi
+
+# Try system gradle
+if command -v gradle >/dev/null 2>&1; then
+    exec gradle "$@"
+fi
+
+echo ""
+echo "ERROR: Gradle not found. Run the following to set up:"
+echo ""
+echo "  curl -L https://services.gradle.org/distributions/gradle-8.2-bin.zip -o gradle.zip"
+echo "  unzip gradle.zip -d gradle-dist"
+echo ""
+exit 1
