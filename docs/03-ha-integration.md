@@ -112,8 +112,9 @@ action: notify.philips_tv
 data:
   title: "Security Alert"
   message: "Motion detected at front door!"
-  duration: 1       # 0=short, 1=long
-  fontsize: large   # small | medium | large
+  data:
+    duration: 1       # 0=short, 1=long
+    fontsize: large   # small | medium | large
 ```
 
 ---
