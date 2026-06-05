@@ -78,6 +78,9 @@ After restart, verify the service exists under **Developer Tools â†’ Actions** â
 
 ## Step 4: Test
 
+> **Note:** The "Fill example data" button in Developer Tools will generate `data: platform specific` which causes a validation error. Always write the YAML manually as shown above.
+
+
 Basic test:
 
 ```yaml
@@ -109,9 +112,8 @@ action: notify.philips_tv
 data:
   title: "Security Alert"
   message: "Motion detected at front door!"
-  data:
-    duration: 1       # 0=short, 1=long
-    fontsize: large   # small | medium | large
+  duration: 1       # 0=short, 1=long
+  fontsize: large   # small | medium | large
 ```
 
 ---

@@ -12,12 +12,12 @@ Configuration in configuration.yaml:
         duration: 1          # 0=short (~2s), 1=long (~3.5s)
         fontsize: medium     # small | medium | large
 
-Per-message overrides via the data field:
+Usage:
 
     action: notify.philips_tv
     data:
-      title: "Front Door"
       message: "Motion detected!"
+      title: "Front Door"
       data:
         duration: 0
         fontsize: large
@@ -54,19 +54,13 @@ class AndroidTVNotifyService(BaseNotificationService):
         self.default_duration = config[CONF_DURATION]
         self.default_fontsize = config[CONF_FONTSIZE]
 
-    @property
-    def extra_data_call_parameters(self):
-        """Define the schema for the data field to avoid HA validation errors."""
-        return {
-            vol.Optional(CONF_DURATION): vol.Any(None, vol.In([0, 1])),
-            vol.Optional(CONF_FONTSIZE): vol.Any(None, vol.In(FONTSIZES)),
-        }
-
     def send_message(self, message="", **kwargs):
         """Send a toast notification to the Android TV."""
-        # Guard against None or non-dict values (e.g. "platform specific" placeholder)
+        # data is a nested dict — HA passes it as-is if it's a valid dict
+        # If None or invalid (e.g. "platform specific"), fall back to empty dict
         raw_data = kwargs.get("data")
         data     = raw_data if isinstance(raw_data, dict) else {}
+
         title    = kwargs.get("title") or ""
         duration = data.get("duration", self.default_duration)
         fontsize = data.get("fontsize", self.default_fontsize)
