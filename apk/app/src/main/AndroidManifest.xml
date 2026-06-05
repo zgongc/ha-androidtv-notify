@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="HANotify">
+
+        <!-- Minimal activity — needed to bring app out of stopped state -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Service that shows the toast on the main thread -->
+        <service
+            android:name=".ToastService"
+            android:exported="true" />
+
+        <!-- Broadcast receiver triggered by ADB intent -->
+        <receiver
+            android:name=".NotifyReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.hanotify.SHOW_TOAST" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>

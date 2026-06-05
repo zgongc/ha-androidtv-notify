@@ -1,0 +1,15 @@
+# Android build outputs
+apk/build/
+apk/app/build/
+apk/.gradle/
+apk/local.properties
+apk/gradle.zip
+apk/gradle-dist/
+
+# Home Assistant
+*.pyc
+__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
