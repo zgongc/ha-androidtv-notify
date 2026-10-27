@@ -23,6 +23,8 @@ Usage:
         fontsize: large
 """
 
+import shlex
+
 from homeassistant.components.notify import BaseNotificationService, PLATFORM_SCHEMA
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -71,13 +73,13 @@ class AndroidTVNotifyService(BaseNotificationService):
         if fontsize not in FONTSIZES:
             fontsize = self.default_fontsize
 
-        # Escape single quotes in user-supplied strings
-        message = str(message).replace("'", "\\'")
-        title   = str(title).replace("'", "\\'")
+        # Quote user-supplied strings for the TV's shell: "TV'yi aç" must not break the command
+        message = shlex.quote(str(message))
+        title   = shlex.quote(str(title)) if title else ""
 
-        extras = f"--es message '{message}' --ei duration {duration} --es fontsize '{fontsize}'"
+        extras = f"--es message {message} --ei duration {duration} --es fontsize '{fontsize}'"
         if title:
-            extras += f" --es title '{title}'"
+            extras += f" --es title {title}"
 
         cmd = (
             f"am start -n com.hanotify/.MainActivity; sleep 1; "
